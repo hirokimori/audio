@@ -4,92 +4,10 @@
     <title>Audio Subtitler</title>
 </head>
 <style>
-    div {font-size: 30px;}
+    __div {font-size: 30px;}
 </style>
 
 <body>
-    <script>
-        var myAudio;
-        var myText;
-
-        window.onload = function(){
-            myAudio = document.getElementById('my-audio');
-            var sk1 = document.getElementById('seek1');
-            var sk2 = document.getElementById('seek2');
-            var sk3 = document.getElementById('seek3');
-            var sk4 = document.getElementById('seek4');
-
-            // associate functions with the 'onclick' events
-            sk1.onclick = seek(-30);
-            sk2.onclick = seek(-10);
-            sk3.onclick = seek(10);
-            sk4.onclick = seek(30);
-
-            loadtext_async('text.txt');
-            setInterval(timer, 500);
-
-            function seek(second) {
-                var curtime = myAudio.currentTime;
-                myAudio.currentTime = curtime + second;
-            }
-        }
-
-        function loadtext_async(file)
-        {
-            var filename = file + '?dummy=' + Math.random(); // disable cache.
-            var xmlhttp;
-            xmlhttp = new XMLHttpRequest();
-            xmlhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    // Typical action to be performed when the document is ready:
-                    if (xmlhttp.responseText.length == 0) return null;
-                    myText = xmlhttp.responseText;
-                }
-            };
-            xmlhttp.open('GET', filename, true);
-            xmlhttp.send();
-            //console.log("async response:" + xmlhttp.responseText);
-        }
-
-        var nextPos = 0;
-        var lastElapsed = 0;
-
-        function timer()
-        {
-            var curtime = myAudio.currentTime;
-            //console.log('curtime=', curtime);
-            var sec = Math.floor(curtime);
-            var begin = 60 * 2 + 20;
-            var end = 60 * 13 + 5;
-            var elapsed = sec - begin; 
-            if (elapsed < 0) return;
-            if (Math.abs(lastElapsed - elapsed) > 3) // jump?
-                nextPos = 0; // reset the next position. 
-            lastElapsed = elapsed;
-
-            const disp_char_num = 16;
-            var len = myText.length;
-            var seekPos = Math.floor(len * elapsed / (end - begin));
-            if (seekPos < nextPos) return; // yet to flip the page?
-            if (seekPos > len) return; // reached to the text end?
-
-            seekPos = nextPos == 0 ? seekPos : nextPos;
-            nextPos = seekPos + disp_char_num;
-
-            var text = myText.substring(seekPos, nextPos);
-            $('#subtitle').html(text);
-        }
-
-    </script>
-
-    <audio controls id="my-audio">
-        <source src="audiofile.mp3" type="audio/mpeg">
-    </audio>
-    <br>
-    <button id="seek1">&lt;&lt;</button>
-    <button id="seek2">&lt;</button>
-    <button id="seek3">&gt;</button>
-    <button id="seek4">&gt;&gt;</button>
-
-    <div id="subtitle"></div>
+    <a href="play.html?audio=audiofile.mp3&text=text.txt">test</a><br>
+    <a href="play.html?audio=LCTS_2.2.35AB.mp3&text=LCTS_2.2.35AB.txt">LCTS_2.2.35AB</a><br>
 </body>

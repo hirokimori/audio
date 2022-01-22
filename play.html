@@ -1,0 +1,175 @@
+<!doctype html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Audio Subtitler</title>
+</head>
+<style>
+    div {font-size: 30px;}
+</style>
+
+<body>
+    <script>
+        var myAudio;
+        var myText;
+        var markers = new Array();
+
+        window.onload = function(){
+            myAudio = document.getElementById('my-audio');
+            var sk1 = document.getElementById('seek1');
+            var sk2 = document.getElementById('seek2');
+            var sk3 = document.getElementById('seek3');
+            var sk4 = document.getElementById('seek4');
+            //var source = document.getElementById('my_source');
+            var source = $('#my_source')[0];
+
+            var url = window.location.href;
+            console.log('URL:', url);
+            url = url.substring(url.indexOf('\?') + 1);
+            var vals = url.split('&');
+            console.log(vals);
+            for(i = 0; i < vals.length; i++)
+            {
+                if (vals[i].startsWith('audio'))
+                {
+                    source.src = vals[i].substring(6);
+                    myAudio.load();
+                    console.log("source:", source.src);
+                }
+                else if (vals[i].startsWith('text'))
+                {
+                    var textpath = vals[i].substring(5);
+                    loadtext_async(textpath);
+                }
+            }
+
+            // associate functions with the 'onclick' events
+            sk1.onclick = function(){seek(-30);}
+            sk2.onclick = function(){seek(-10);}
+            sk3.onclick = function(){seek(10);}
+            sk4.onclick = function(){seek(30);}
+
+            setInterval(timer, 500);
+
+            function seek(second) {
+                console.log('seek', second);
+                var curtime = myAudio.currentTime;
+                myAudio.currentTime = curtime + second;
+            }
+        }
+
+        function process_text()
+        {
+            var newText = '';
+            const regex = /\{[0-9]+:[0-9]+\}/;
+            while((found = myText.match(regex)) != null)
+            {
+                var pos = myText.search(found);
+                newText += myText.substring(0, pos);
+                myText = myText.substring(pos + found[0].length);
+                console.log('found:', found[0]);
+                //console.log('newText:', newText);
+                //console.log('myText:', myText);
+
+                var f = found[0].substring(1, found[0].length - 1);
+                var t = f.split(':');
+                var min = parseInt(t[0]);
+                var sec = parseInt(t[1]) + min * 60;
+                //console.log('time-> ', hour, ':', min);
+
+                markers.push([sec, newText.length]);
+            }
+            newText += myText; // add the remaining text.
+                        
+            console.log('markers:', markers);
+            if (markers.length == 0) return;
+
+            for(i = 0; i < markers.length; i++)
+            {
+                var pos = markers[i][1];
+                console.log(newText.substring(pos, pos + 10));
+            }
+            myText = newText;
+        }
+
+        function loadtext_async(file)
+        {
+            var filename = file + '?dummy=' + Math.random(); // disable cache.
+            var xmlhttp;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    // Typical action to be performed when the document is ready:
+                    if (xmlhttp.responseText.length == 0) return null;
+                    myText = xmlhttp.responseText;
+                    process_text();
+                }
+            };
+            xmlhttp.open('GET', filename, true);
+            xmlhttp.send();
+            //console.log("async response:" + xmlhttp.responseText);
+        }
+
+        function getTextPos(sec)
+        {
+            if (markers.length == 0) // no marker?
+            {
+                return Math.floor(myText.length * sec / myAudio.duration);
+            }
+
+            for(i = 0; i < markers.length; i++)
+            {
+                var mpos = markers[i][1];
+                var msec = markers[i][0];
+                if (msec > sec)
+                {
+                    if (i == 0)
+                        return (mpos * (sec / msec));
+                    var mpos_p = markers[i-1][1];
+                    var msec_p = markers[i-1][0];
+                    return Math.floor(mpos_p + (mpos - mpos_p) * (sec - msec_p) / (msec - msec_p));
+                }
+            }
+            // passed all markers
+            var lastMarker = markers[markers.length - 1];
+            return Math.floor(lastMarker[1] + (myText.length - lastMarker[1]) * (sec - lastMarker[0]) / (myAudio.duration - lastMarker[0]));
+        }
+
+        var nextPos = 0;
+        var lastElapsed = 0;
+
+        function timer()
+        {
+            var curtime = myAudio.currentTime;
+            //console.log('curtime=', curtime);
+
+            var sec = Math.floor(curtime);
+            if (Math.abs(lastElapsed - sec) > 3) // jump?
+                nextPos = 0; // reset the next position. 
+            lastElapsed = sec;
+
+            var seekPos = getTextPos(sec);
+
+            if (seekPos < nextPos) return; // yet to flip the page?
+            //if (seekPos >= len) return; // reached to the text end?
+
+            const disp_char_num = 24;
+            seekPos = nextPos == 0 ? seekPos : nextPos;
+            nextPos = seekPos + disp_char_num;
+
+            var text = myText.substring(seekPos, nextPos);
+            $('#subtitle').html(text);
+        }
+
+    </script>
+
+    <audio autoplay loop controls id="my-audio">
+        <source id="my_source" src="" type="audio/mpeg">
+    </audio>
+    <br>
+    <button id="seek1">&lt;&lt;</button>
+    <button id="seek2">&lt;</button>
+    <button id="seek3">&gt;</button>
+    <button id="seek4">&gt;&gt;</button>
+
+    <div id="subtitle"></div>
+</body>
