@@ -1,10 +1,15 @@
 <!doctype html>
 <head>
+    <meta charset="UTF-8">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>Audio Subtitler</title>
 </head>
 <style>
-    div {font-size: 30px;}
+    body{background-color: black;
+        color:white;
+        font-size: 18px;
+        font-family: helvetica,Segoe UI,游ゴシック体,YuGothic,游ゴシック Medium,Yu Gothic Medium,游ゴシック,Yu Gothic,メイリオ,Meiryo,sans-serif;}
+    .subtitle{font-size: 32px}
 </style>
 
 <body>
@@ -158,8 +163,24 @@
 
             var text = myText.substring(seekPos, nextPos);
             $('#subtitle').html(text);
+            var text2 = myText.substring(nextPos, nextPos + disp_char_num);
+            $('#subtitle2').html(text2);
         }
 
+        function flip_x_clicked()
+        {
+            var sub1 = document.getElementById("subtitle");
+            var sub2 = document.getElementById("subtitle2");
+            var checkBox = document.getElementById("flip_x");
+            if(checkBox.checked)
+            {
+                sub1.style.transform = 'scaleX(-1)';
+                sub2.style.transform = 'scaleX(-1)';
+            }else{
+                sub1.style.transform = '';
+                sub2.style.transform = '';
+            }
+        }
     </script>
 
     <audio autoplay loop controls id="my-audio">
@@ -170,6 +191,8 @@
     <button id="seek2">&lt;</button>
     <button id="seek3">&gt;</button>
     <button id="seek4">&gt;&gt;</button>
+    <input type="checkbox" id="flip_x" onclick="flip_x_clicked()"><label>Flip X</label>
 
-    <div id="subtitle"></div>
+    <div id="subtitle" class="subtitle"></div>
+    <div id="subtitle2" class="subtitle"></div>
 </body>
