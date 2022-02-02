@@ -12,58 +12,82 @@
     .subtitle{font-size: 32px}
 </style>
 
-<body>
+<body onload="onload()">
     <script>
         var myAudio;
-        var myText;
+        var myText = '';
         var markers = new Array();
+        var curIndex = 0;
 
-        window.onload = function(){
+        function onload()
+        {
             myAudio = document.getElementById('my-audio');
             var sk1 = document.getElementById('seek1');
             var sk2 = document.getElementById('seek2');
             var sk3 = document.getElementById('seek3');
             var sk4 = document.getElementById('seek4');
-            //var source = document.getElementById('my_source');
-            var source = $('#my_source')[0];
-
-            var url = window.location.href;
-            console.log('URL:', url);
-            url = url.substring(url.indexOf('\?') + 1);
-            var vals = url.split('&');
-            console.log(vals);
-            for(i = 0; i < vals.length; i++)
-            {
-                if (vals[i].startsWith('audio'))
-                {
-                    source.src = vals[i].substring(6);
-                    myAudio.load();
-                    console.log("source:", source.src);
-                }
-                else if (vals[i].startsWith('text'))
-                {
-                    var textpath = vals[i].substring(5);
-                    loadtext_async(textpath);
-                }
-            }
+            var start = document.getElementById('start');
 
             // associate functions with the 'onclick' events
             sk1.onclick = function(){seek(-30);}
             sk2.onclick = function(){seek(-10);}
             sk3.onclick = function(){seek(10);}
             sk4.onclick = function(){seek(30);}
+            start.onclick = function(){mystart();}
 
-            setInterval(timer, 500);
+            myAudio.addEventListener("timeupdate", function(){audioProgressing();});
+            myAudio.addEventListener("ended", function(){playEnded();});
+            myAudio.addEventListener("play", function(){playStarted();});
+            //setInterval(timer, 500);
+            loadtext_async('toc.json');
+        }
 
-            function seek(second) {
-                console.log('seek', second);
-                var curtime = myAudio.currentTime;
-                myAudio.currentTime = curtime + second;
+        function seek(second) 
+        {
+            console.log('seek', second);
+            var curtime = myAudio.currentTime;
+            myAudio.currentTime = curtime + second;
+        }
+
+        function mystart()
+        {
+            var source = $('#my_source')[0];
+            var list = document.getElementsByClassName("list_item");
+            var checkedNum = 0;
+            for(i = 0; i < list.length; i++)
+            {
+                if (list[i].checked)
+                {
+                    checkedNum++;
+                }
+            }
+            var index = curIndex % checkedNum;
+            loadtext_async("data/" + list[index].attributes["text"].value);
+            source.src = "data/" + list[index].attributes["audio"].value;
+            myAudio.load();
+        }
+
+        function process_toc(text)
+        {
+            var data = JSON.parse(text);
+            for(i = 0; i < data.length; i++)
+            {
+                var entry = data[i];
+                var checkb = document.createElement("input");
+                checkb.setAttribute("type", "checkbox");
+                checkb.setAttribute("class", "list_item");
+                checkb.setAttribute("audio", entry['audio']);
+                checkb.setAttribute("text", entry['text']);
+                var lbl = document.createElement("label");
+                lbl.innerHTML = entry['title'] + "<br>";
+                $("#playlist").append(checkb, lbl);
             }
         }
 
-        function process_text()
+        function process_text(text)
         {
+            myText = text;
+            markers = [];
             var newText = '';
             const regex = /\{[0-9]+:[0-9]+\}/;
             while((found = myText.match(regex)) != null)
@@ -72,15 +96,11 @@
                 newText += myText.substring(0, pos);
                 myText = myText.substring(pos + found[0].length);
                 console.log('found:', found[0]);
-                //console.log('newText:', newText);
-                //console.log('myText:', myText);
 
                 var f = found[0].substring(1, found[0].length - 1);
                 var t = f.split(':');
                 var min = parseInt(t[0]);
                 var sec = parseInt(t[1]) + min * 60;
-                //console.log('time-> ', hour, ':', min);
-
                 markers.push([sec, newText.length]);
             }
             newText += myText; // add the remaining text.
@@ -94,6 +114,9 @@
                 console.log(newText.substring(pos, pos + 10));
             }
             myText = newText;
+
+            nextPos = 0;
+            lastElapsed = 0;
         }
 
         function loadtext_async(file)
@@ -105,17 +128,20 @@
                 if (this.readyState == 4 && this.status == 200) {
                     // Typical action to be performed when the document is ready:
                     if (xmlhttp.responseText.length == 0) return null;
-                    myText = xmlhttp.responseText;
-                    process_text();
+                    if (file.endsWith('.txt'))
+                        process_text(xmlhttp.responseText);
+                    else if (file.endsWith('.json'))
+                        process_toc(xmlhttp.responseText);
                 }
             };
             xmlhttp.open('GET', filename, true);
             xmlhttp.send();
-            //console.log("async response:" + xmlhttp.responseText);
         }
 
         function getTextPos(sec)
         {
+            if (myText.length == 0) return;
+
             if (markers.length == 0) // no marker?
             {
                 return Math.floor(myText.length * sec / myAudio.duration);
@@ -139,10 +165,25 @@
             return Math.floor(lastMarker[1] + (myText.length - lastMarker[1]) * (sec - lastMarker[0]) / (myAudio.duration - lastMarker[0]));
         }
 
+
+        function playStarted()
+        {
+            console.log('play started');
+            nextPos = 0;
+            lastElapsed = 0;
+        }
+
+        function playEnded()
+        {
+            console.log("play ended");
+            curIndex++;
+            mystart();
+        }
+
         var nextPos = 0;
         var lastElapsed = 0;
 
-        function timer()
+        function audioProgressing()
         {
             var curtime = myAudio.currentTime;
             //console.log('curtime=', curtime);
@@ -183,7 +224,7 @@
         }
     </script>
 
-    <audio autoplay loop controls id="my-audio">
+    <audio autoplay controls id="my-audio">
         <source id="my_source" src="" type="audio/mpeg">
     </audio>
     <br>
@@ -192,7 +233,12 @@
     <button id="seek3">&gt;</button>
     <button id="seek4">&gt;&gt;</button>
     <input type="checkbox" id="flip_x" onclick="flip_x_clicked()"><label>Flip X</label>
+    <br>
+    <button id="start">Start</button>
 
     <div id="subtitle" class="subtitle"></div>
     <div id="subtitle2" class="subtitle"></div>
+
+    <div id="playlist">
+    </div>
 </body>

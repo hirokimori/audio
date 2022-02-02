@@ -1,0 +1,6 @@
+[{"title": "test", "audio": "audiofile.mp3", "text": "text.txt"},
+{"title": "あなたの知らない中国語", "audio": "anatano.m4a", "text": "anatano.txt"},
+{"title": "LCTS_2.3.17A 拳王阿里", "audio": "LCTS_2.3.17A.mp3", "text": "LCTS_2.3.17A.txt"},
+{"title": "LCTS_2.1.36A 黔驴技穷", "audio": "LCTS_2.1.36A.mp3", "text": "LCTS_2.1.36.txt"},
+{"title": "LCTS_2.2.35AB 中国孩子常被问到的问题", "audio": "LCTS_2.2.35AB.mp3", "text": "LCTS_2.2.35AB.txt"}
+]
