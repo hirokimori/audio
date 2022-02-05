@@ -10,6 +10,13 @@
         font-size: 18px;
         font-family: helvetica,Segoe UI,游ゴシック体,YuGothic,游ゴシック Medium,Yu Gothic Medium,游ゴシック,Yu Gothic,メイリオ,Meiryo,sans-serif;}
     .subtitle{font-size: 32px}
+    pre {
+        white-space: pre-wrap;       /* Since CSS 2.1 */
+        white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap;    /* Opera 7 */
+        word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    }
 </style>
 
 <body onload="onload()">
@@ -62,6 +69,18 @@
                 }
             }
             var index = curIndex % checkedNum;
+            var item = 0;
+            for(i = 0; i < list.length; i++)
+            {
+                if (list[i].checked)
+                {
+                    if (item++ == index)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+            }
             loadtext_async("data/" + list[index].attributes["text"].value);
             source.src = "data/" + list[index].attributes["audio"].value;
             myAudio.load();
@@ -208,6 +227,17 @@
             $('#subtitle2').html(text2);
         }
 
+        function show_text_clicked()
+        {
+            var checkBox = document.getElementById("show_all_text");
+            if(checkBox.checked)
+            {
+                $('#all_text').html("<pre>" + myText + "</pre>");
+            }else{
+                $('#all_text').html('');
+            }
+        }
+
         function flip_x_clicked()
         {
             var sub1 = document.getElementById("subtitle");
@@ -233,12 +263,13 @@
     <button id="seek3">&gt;</button>
     <button id="seek4">&gt;&gt;</button>
     <input type="checkbox" id="flip_x" onclick="flip_x_clicked()"><label>Flip X</label>
+    <input type="checkbox" id="show_all_text" onclick="show_text_clicked()"><label>Show All Text</label>
     <br>
     <button id="start">Start</button>
 
     <div id="subtitle" class="subtitle"></div>
     <div id="subtitle2" class="subtitle"></div>
-
+    <div id="all_text"></div>
     <div id="playlist">
     </div>
 </body>
